@@ -48,6 +48,7 @@
     .front { transform: rotateY(180deg); }
     #rarity { margin-top: 10px; font-weight: bold; }
     #controls { margin-top: 20px; }
+    #controls button { margin: 0 5px; }
     #collection {
       margin-top: 20px;
       display: none;
@@ -70,21 +71,29 @@
   <div id="rarity"></div>
   <div id="controls">
     <button id="show-collection">Show Collection</button>
+    <button id="clear-save">Clear Save</button>
   </div>
   <div id="collection"></div>
 
   <script>
-    // Generate 200 card types with random fractional rarities (1/2 to 1/50) and gradient colors
-    const cardTypes = Array.from({ length: 1000 }, (_, i) => {
-      const hue1 = Math.floor(Math.random() * 360);
-      const hue2 = Math.floor(Math.random() * 360);
-      const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
-      const denom = Math.floor(Math.random() * 10000) + 2; // 2 to 50
-      const rarity = `1/${denom}`;
-      // Adjusted weight: use exponent 1.5 for moderate rarity scaling
-      const weight = 1 / Math.pow(denom, 1.5);
-      return { id: i + 1, style: gradient, rarity, weight };
-    });
+    // Load or generate card types persistently
+    const STORAGE_KEY = 'myCardTypes';
+    let cardTypes = [];
+    const savedTypes = localStorage.getItem(STORAGE_KEY);
+    if (savedTypes) {
+      cardTypes = JSON.parse(savedTypes);
+    } else {
+      cardTypes = Array.from({ length: 1000 }, (_, i) => {
+        const hue1 = Math.floor(Math.random() * 360);
+        const hue2 = Math.floor(Math.random() * 360);
+        const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
+        const denom = Math.floor(Math.random() * 9999) + 2; // 2 to 10000
+        const rarity = `1/${denom}`;
+        const weight = 1 / Math.pow(denom, 1.5);
+        return { id: i + 1, style: gradient, rarity, weight };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cardTypes));
+    }
 
     // Precompute total weight for weighted draw
     const totalWeight = cardTypes.reduce((sum, card) => sum + card.weight, 0);
@@ -102,6 +111,8 @@
     const frontSide = document.getElementById('front-side');
     const rarityEl = document.getElementById('rarity');
     const collectionEl = document.getElementById('collection');
+    const showBtn = document.getElementById('show-collection');
+    const clearBtn = document.getElementById('clear-save');
 
     function saveCollection() {
       localStorage.setItem('myCardCollection', JSON.stringify(collection.map(c => c.id)));
@@ -141,7 +152,7 @@
       }
     });
 
-    document.getElementById('show-collection').addEventListener('click', () => {
+    showBtn.addEventListener('click', () => {
       collectionEl.innerHTML = '<h3>Your Collection:</h3>';
       collection.forEach(card => {
         const div = document.createElement('div');
@@ -157,6 +168,12 @@
         collectionEl.appendChild(div);
       });
       collectionEl.style.display = 'block';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('myCardCollection');
+      location.reload();
     });
   </script>
 </body>
