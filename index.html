@@ -76,29 +76,23 @@
   <div id="collection"></div>
 
   <script>
-    // Load or generate card types persistently
-    const STORAGE_KEY = 'myCardTypes';
-    let cardTypes = [];
-    const savedTypes = localStorage.getItem(STORAGE_KEY);
-    if (savedTypes) {
-      cardTypes = JSON.parse(savedTypes);
-    } else {
-      cardTypes = Array.from({ length: 1000 }, (_, i) => {
-        const hue1 = Math.floor(Math.random() * 360);
-        const hue2 = Math.floor(Math.random() * 360);
-        const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
-        const denom = Math.floor(Math.random() * 9999) + 2; // 2 to 10000
-        const rarity = `1/${denom}`;
-        const weight = 1 / Math.pow(denom, 1.5);
-        return { id: i + 1, style: gradient, rarity, weight };
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cardTypes));
+    // Deterministic card generation: same for everyone
+    const CARD_COUNT = 1000;
+    function deterministicCard(id) {
+      // simple formulas based on id
+      const hue1 = (id * 37 + 13) % 360;
+      const hue2 = (id * 73 + 29) % 360;
+      const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
+      const denom = (id * 17) % 9999 + 2; // 2 to 50
+      const rarity = `1/${denom}`;
+      const weight = 1 / Math.pow(denom, 1.5);
+      return { id, style: gradient, rarity, weight };
     }
 
-    // Precompute total weight for weighted draw
-    const totalWeight = cardTypes.reduce((sum, card) => sum + card.weight, 0);
+    const cardTypes = Array.from({ length: CARD_COUNT }, (_, i) => deterministicCard(i + 1));
+    const totalWeight = cardTypes.reduce((sum, c) => sum + c.weight, 0);
 
-    // Load saved collection from localStorage
+    // Load saved collection
     let collection = [];
     const saved = JSON.parse(localStorage.getItem('myCardCollection') || '[]');
     saved.forEach(id => {
@@ -119,14 +113,10 @@
     }
 
     function drawCard() {
-      // Weighted random selection
       let r = Math.random() * totalWeight;
-      for (const card of cardTypes) {
+      for (let card of cardTypes) {
         r -= card.weight;
-        if (r <= 0) {
-          currentCard = card;
-          break;
-        }
+        if (r <= 0) { currentCard = card; break; }
       }
       frontSide.style.background = currentCard.style;
       frontSide.textContent = `#${currentCard.id}`;
@@ -143,9 +133,7 @@
     cardEl.addEventListener('click', () => {
       if (!cardEl.classList.contains('flipped')) {
         cardEl.classList.add('flipped');
-        setTimeout(() => {
-          rarityEl.textContent = `Rarity: ${currentCard.rarity}`;
-        }, 300);
+        setTimeout(() => rarityEl.textContent = `Rarity: ${currentCard.rarity}`, 300);
       } else {
         cardEl.classList.remove('flipped');
         setTimeout(drawCard, 300);
@@ -158,12 +146,8 @@
         const div = document.createElement('div');
         div.textContent = `#${card.id} - ${card.rarity}`;
         Object.assign(div.style, {
-          display: 'inline-block',
-          margin: '4px',
-          padding: '6px',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          background: card.style
+          display: 'inline-block', margin: '4px', padding: '6px',
+          border: '1px solid #ccc', borderRadius: '4px', background: card.style
         });
         collectionEl.appendChild(div);
       });
@@ -171,7 +155,6 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('myCardCollection');
       location.reload();
     });
