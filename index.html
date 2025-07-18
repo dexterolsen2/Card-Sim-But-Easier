@@ -82,7 +82,7 @@
       const hue1 = (id * 37 + 13) % 360;
       const hue2 = (id * 73 + 29) % 360;
       const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
-      const denom = (id * 17) % 9999 + 2; // 2 to 50
+      const denom = (id * 17) % 9999 + 2;
       const rarity = `1/${denom}`;
       const weight = 1 / Math.pow(denom, 1.5);
       return { id, style: gradient, rarity, weight };
@@ -139,14 +139,16 @@
       }
     });
 
-    // Toggle collection visibility
+    // Toggle and sort collection
     showBtn.addEventListener('click', () => {
       if (collectionEl.style.display === 'block') {
         collectionEl.style.display = 'none';
         showBtn.textContent = 'Show Collection';
       } else {
         collectionEl.innerHTML = '<h3>Your Collection:</h3>';
-        collection.forEach(card => {
+        // Sort by card id ascending
+        const sorted = [...collection].sort((a, b) => a.id - b.id);
+        sorted.forEach(card => {
           const div = document.createElement('div');
           div.textContent = `#${card.id} - ${card.rarity}`;
           Object.assign(div.style, {
