@@ -79,7 +79,6 @@
     // Deterministic card generation: same for everyone
     const CARD_COUNT = 1050;
     function deterministicCard(id) {
-      // simple formulas based on id
       const hue1 = (id * 37 + 13) % 360;
       const hue2 = (id * 73 + 29) % 360;
       const gradient = `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%))`;
@@ -140,18 +139,25 @@
       }
     });
 
+    // Toggle collection visibility
     showBtn.addEventListener('click', () => {
-      collectionEl.innerHTML = '<h3>Your Collection:</h3>';
-      collection.forEach(card => {
-        const div = document.createElement('div');
-        div.textContent = `#${card.id} - ${card.rarity}`;
-        Object.assign(div.style, {
-          display: 'inline-block', margin: '4px', padding: '6px',
-          border: '1px solid #ccc', borderRadius: '4px', background: card.style
+      if (collectionEl.style.display === 'block') {
+        collectionEl.style.display = 'none';
+        showBtn.textContent = 'Show Collection';
+      } else {
+        collectionEl.innerHTML = '<h3>Your Collection:</h3>';
+        collection.forEach(card => {
+          const div = document.createElement('div');
+          div.textContent = `#${card.id} - ${card.rarity}`;
+          Object.assign(div.style, {
+            display: 'inline-block', margin: '4px', padding: '6px',
+            border: '1px solid #ccc', borderRadius: '4px', background: card.style
+          });
+          collectionEl.appendChild(div);
         });
-        collectionEl.appendChild(div);
-      });
-      collectionEl.style.display = 'block';
+        collectionEl.style.display = 'block';
+        showBtn.textContent = 'Hide Collection';
+      }
     });
 
     clearBtn.addEventListener('click', () => {
