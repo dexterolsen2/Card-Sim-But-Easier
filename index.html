@@ -28,9 +28,7 @@
       transition: transform 0.6s;
       cursor: pointer;
     }
-    .card.flipped {
-      transform: rotateY(180deg);
-    }
+    .card.flipped { transform: rotateY(180deg); }
     .side {
       position: absolute;
       width: 100%;
@@ -59,6 +57,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    input[type=file] { display: none; }
   </style>
 </head>
 <body>
@@ -72,11 +71,14 @@
   <div id="controls">
     <button id="show-collection">Show Collection</button>
     <button id="clear-save">Clear Save</button>
+    <button id="export-save">Export Save</button>
+    <button id="import-save">Import Save</button>
+    <input type="file" id="file-input" accept="application/json" />
   </div>
   <div id="collection"></div>
 
   <script>
-    // Deterministic card generation: same for everyone
+    // Deterministic card generation
     const CARD_COUNT = 1050;
     function deterministicCard(id) {
       const hue1 = (id * 37 + 13) % 360;
@@ -93,19 +95,23 @@
 
     // Load saved collection
     let collection = [];
-    const saved = JSON.parse(localStorage.getItem('myCardCollection') || '[]');
-    saved.forEach(id => {
-      const card = cardTypes.find(c => c.id === id);
-      if (card) collection.push(card);
+    const savedIds = JSON.parse(localStorage.getItem('myCardCollection') || '[]');
+    savedIds.forEach(id => {
+      const c = cardTypes.find(card => card.id === id);
+      if (c) collection.push(c);
     });
 
-    let currentCard;
+    // Elements
     const cardEl = document.getElementById('card');
     const frontSide = document.getElementById('front-side');
     const rarityEl = document.getElementById('rarity');
     const collectionEl = document.getElementById('collection');
     const showBtn = document.getElementById('show-collection');
     const clearBtn = document.getElementById('clear-save');
+    const exportBtn = document.getElementById('export-save');
+    const importBtn = document.getElementById('import-save');
+    const fileInput = document.getElementById('file-input');
+    let currentCard;
 
     function saveCollection() {
       localStorage.setItem('myCardCollection', JSON.stringify(collection.map(c => c.id)));
@@ -113,7 +119,7 @@
 
     function drawCard() {
       let r = Math.random() * totalWeight;
-      for (let card of cardTypes) {
+      for (const card of cardTypes) {
         r -= card.weight;
         if (r <= 0) { currentCard = card; break; }
       }
@@ -139,14 +145,12 @@
       }
     });
 
-    // Toggle and sort collection
+    // Toggle collection
     showBtn.addEventListener('click', () => {
       if (collectionEl.style.display === 'block') {
-        collectionEl.style.display = 'none';
-        showBtn.textContent = 'Show Collection';
+        collectionEl.style.display = 'none'; showBtn.textContent = 'Show Collection';
       } else {
         collectionEl.innerHTML = '<h3>Your Collection:</h3>';
-        // Sort by card id ascending
         const sorted = [...collection].sort((a, b) => a.id - b.id);
         sorted.forEach(card => {
           const div = document.createElement('div');
@@ -157,14 +161,48 @@
           });
           collectionEl.appendChild(div);
         });
-        collectionEl.style.display = 'block';
-        showBtn.textContent = 'Hide Collection';
+        collectionEl.style.display = 'block'; showBtn.textContent = 'Hide Collection';
       }
     });
 
+    // Clear save
     clearBtn.addEventListener('click', () => {
       localStorage.removeItem('myCardCollection');
       location.reload();
+    });
+
+    // Export save as JSON file
+    exportBtn.addEventListener('click', () => {
+      const data = JSON.stringify(collection.map(c => c.id));
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'card_collection.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Import save from JSON file
+    importBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const ids = JSON.parse(reader.result);
+          if (Array.isArray(ids)) {
+            localStorage.setItem('myCardCollection', JSON.stringify(ids));
+            location.reload();
+          } else {
+            alert('Invalid save format');
+          }
+        } catch {
+          alert('Error reading file');
+        }
+      };
+      reader.readAsText(file);
     });
   </script>
 </body>
