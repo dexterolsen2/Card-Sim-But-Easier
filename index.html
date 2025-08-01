@@ -87,7 +87,7 @@
       else denom = (id - 1) * 10;
       const color = randomHex(id);
       const rarity = `1/${denom}`;
-      const baseWeight = 1 / Math.pow(denom);
+      const baseWeight = 1 / Math.pow(denom, 1);
       return { id, style: color, rarity, weight: baseWeight * luckMultiplier };
     }
 
@@ -182,4 +182,5 @@
   </script>
 </body>
 </html>
+
 
